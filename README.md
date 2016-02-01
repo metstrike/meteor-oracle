@@ -1,6 +1,7 @@
-# meteor-oracle
+# meteor-oracle 0.2.0
 This package allows thousands of enterprises to build and deploy **Meteor** applications that access their data stored in **Oracle** databases.
 
+### Examples
 **Example 1:** Create Oracle.Collection and use it the same way as Mongo.Collection
 ```javascript
 var coll = new Oracle.Collection("todos");
@@ -25,16 +26,74 @@ And will print the following rows result:
 **Example 2:** Connect to a different Oracle account
 ```javascript
 Oracle.setDefaultOracleOptions(
-    {user: "scott", 
-    password: "tiger", 
-    connectString : "localhost/XE"
+    {connection:
+    	{user: "scott", 
+    	password: "tiger", 
+    	connectString : "host:1521/sid"
+    	}
     });
 ```
 **Example 3:** Turn on debug mode which prints all the executed SQL statements
 ```js
 Oracle.setDefaultOracleOptions({sqlDebug: true});
 ```
-### Release 0.1.0 (12/15/2015)
+**Example 4:** Prevent automatic changes in db schema (turn off elastic data model, turn on strict mode)
+```js
+Oracle.setDefaultOracleOptions({strict: true});
+```
+Prevents adding or changing any table or trigger.
+
+**Example 5:** Prevent adding or changing any DB object, except oplog table and oplog triggers
+```js
+Oracle.setDefaultOracleOptions({strictAllowOplogAndTriggers: true});
+```
+
+### Installation
+See **Detailed Installation Instructions** below for more information.
+
+**Step 1:** Install or get access to **Oracle Database**
+
+**Step 2:** Install **Oracle Instant Client**
+
+**Step 3:** Create a meteor account in your oracle database.
+```bash
+$ sqlplus sys as sysdba
+create user meteor identified by meteor;
+grant connect, resource to meteor;
+```
+**Step 4:** Add **meteor-oracle** package to your meteor project
+```bash
+$ cd <PATH-TO-YOUR-METEOR-PROJECT>
+$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<PATH-TO-YOUR-ORACLE-INSTANT-CLIENT>/instantclient_11_2/
+$ meteor add metstrike:meteor-oracle
+$ meteor
+```
+
+### Run TODOS Example Application with Oracle
+It was very easy to convert the TODO example application. The modified version can be found here: [https://github.com/metstrike/todos-oracle](https://github.com/metstrike/todos-oracle).
+
+---
+### Approach
+There are several other projects trying to integrate Meteor with SQL database and this is just another attempt to fit the concept of relational database into the architecture of Meteor. The current approach allows developers to write Meteor applications the same way as if they were writing them for MongoDB. The only difference is that instead of **Mongo.Collection** they need to use **Oracle.Collection**. All the remaining code stays the same and the application should work. No database tables or indexes have to be created by developer, the driver will create and maintain them all automatically.Similarly no database triggers to populate the oplog table have to be created manually, the driver will generate them automatically whenever a new collecton is created and it will regenerate them whenever a new column is added to the collection.
+
+The simlicity and benefits of this approach can be demonstrated on existing sample Meteor applications like [TODOS](https://github.com/metstrike/todos-oracle) which can be very easily converted to work with Oracle. There is a caveat though, the developers need to be aware of current feature restrictions (and extensions) of this package. Not all features (e.g. the nested data structures) are currently supported and in the future some innovative features (e.g. the reactive $join operator) may be available in Oracle collections, while still not available in Mongo.
+
+Oracle database provides a lot of rich and robust features, that are used by thousands of enterprises accros the world. A few examples in no particular order are: inner and outer joins (duh), views, bitmap indexes, library of packages, analytical and window queries, full text indexing, high availability, partitioning, materialized views, CLOBs/BLOBs, etc. The most useful features might be gradually exposed in this package allowing developers to incorporate them into their enterprise applications.
+
+The current implementation is trying to reuse as much of existing Meteor code as possible so that it could be easily maintained in the future. The core objects (Oracle.Collection, OracleConnection) are inheriting most of the functionality from their mongo counterparts (Mongo.Collection, MongoConnection). In fact, the **Oracle.Collection** on the client side behaves 100% the same as Mongo.Collection. All the modifications are implemented on the server side only. 
+
+This package is dependent on [node-oracledb](https://github.com/oracle/node-oracledb), the Oracle Database driver for Node.js maintained by Oracle Corp. All the SQL queries and commands are being sent to this module, which handles all the communication with the Oracle database.
+
+---
+### Releases
+### 0.2.0 (2/1/2015)
+
+* Connectivity to external Oracle databases
+* Strict mode that prevents automatic changes in db schema (turns off elastic data model)
+* Automatic creation of OPLOG table and METEOR_PKG package
+* Removed dependency on DBMS_FLASHBACK
+
+### 0.1.0 (12/15/2015)
 __Features:__
 
 * **Oracle.Collection** class which behaves the same as **Mongo.Collection**
@@ -72,24 +131,14 @@ __Features:__
 
 __Restrictons:__
 
+* only linux environment is supported at this moment
 * column data types have to be consistent
 * nested data structures are not suported
-* the strict mode is not implemented yet
 * some operators in find() selector are not implemented yet
     * $maxDistance, $all, $near, $options, regexp inside $in or $nin, $size, $type
 * some operators in update() selector are not implemented yet
     * $setOnInsert, $push, $pushAll, $addToSet, $pop, $pull, $pullAll, $rename, $bit, $elemMatch
 
-### Approach
-There are several other projects trying to integrate Meteor with SQL database and this is just another attempt to fit the concept of relational database into the architecture of Meteor. The current approach allows developers to write Meteor applications the same way as if they were writing them for MongoDB. The only difference is that instead of **Mongo.Collection** they need to use **Oracle.Collection**. All the remaining code stays the same and the application should work. No database tables or indexes have to be created by developer, the driver will create and maintain them all automatically.Similarly no database triggers to populate the oplog table have to be created manually, the driver will generate them automatically whenever a new collecton is created and it will regenerate them whenever a new column is added to the collection.
-
-The simlicity and benefits of this approach can be demonstrated on existing sample Meteor applications like [TODOS](https://github.com/metstrike/todos) or [TelescopeJS](https://github.com/metstrike/Telescope) which can be very easily converted to work with Oracle. There is a caveat though, the developers need to be aware of current feature restrictions (and extensions) of this package. Not all features (e.g. the nested data structures) are currently supported and in the future some innovative features (e.g. the reactive $join operator) may be available in Oracle collections, while still not available in Mongo.
-
-Oracle database provides a lot of rich and robust features, that are used by thousands of enterprises accros the world. A few examples in no particular order are: inner and outer joins (duh), views, bitmap indexes, library of packages, analytical and window queries, full text indexing, high availability, partitioning, materialized views, CLOBs/BLOBs, etc. The most useful features might be gradually exposed in this package allowing developers to incorporate them into their enterprise applications.
-
-The current implementation is trying to reuse as much of existing Meteor code as possible so that it could be easily maintained in the future. The core objects (Oracle.Collection, OracleConnection) are inheriting most of the functionality from their mongo counterparts (Mongo.Collection, MongoConnection). In fact, the **Oracle.Collection** on the client side behaves 100% the same as Mongo.Collection. All the modifications are implemented on the server side only. 
-
-This package is dependent on [node-oracledb](https://github.com/oracle/node-oracledb), the Oracle Database driver for Node.js maintained by Oracle Corp. All the SQL queries and commands are being sent to this module, which handles all the communication with the Oracle database.
 ### Future Improvements
 * use node-oracledb connection pool
 * use oracle resultsets to implement collection cursor 
@@ -104,8 +153,8 @@ Released under the MIT license. See the LICENSE file for more info.
 
 __Copyright (c) 2015 AMI System LLC__
 - - - 
-### Installation
-**Step 1:** Install Oracle Database
+### Detailed Installation Instructions
+**Step 1:** Install or get access to **Oracle Database**
 
 * It is very likely that you already have your Oracle database installed and this step can be skipped
 * If that is not a case you can easily download and install free [Oracle Database 11g Express Edition](http://www.oracle.com/technetwork/database/database-technologies/express-edition/downloads/index.html).
@@ -142,32 +191,21 @@ SQL>
 	* Login to your Oracle account. If you don't have one, you need to create it. It is free.
 	* Unzip the downloded file into your workspace directory e.g. **~/workspace/**
 	* The new subdirectory e.g. **~/workspace/instantclient_11_2** will be created
-* Environment variable **LD_LIBRARY_PATH** has to be set accordingly (run the shell script **source_me.sh**) 
+* Environment variable **LD_LIBRARY_PATH** has to be set accordingly
 ```shell
 $ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:~/workspace/instantclient_11_2
 ```
-**Step 3:** Clone **meteor-oracle** repository into your workspace directory
-```bash
-$ cd ~/workspace
-$ git clone https://github.com/metstrike/meteor-oracle.git
+**Step 3:** Create a meteor account in your oracle database.
 ```
-**Step 4:** Setup a meteor account in your oracle database by running the script **oracle_setup.sh**.
-```bash
-$ cd ~/workspace/meteor-oracle
-$ ./oracle_setup.sh
-Please enter the system password
-
-SQL*Plus: Release 11.2.0.2.0 Production on Mon Dec 14 16:39:47 2015
-
-Copyright (c) 1982, 2011, Oracle.  All rights reserved.
-
-Enter SID [XE]: 
-Enter SYS password:
-.
-.
-.
+$ sqlplus sys as sysdba
+create user meteor identified by meteor;
+grant connect, resource to meteor;
 ```
-**Step 5:** Verify that your meteor account has been created:
+Make sure that this user has privileges to use the default tablespace. In case of issues you can use the following command:
+```
+grant unlimited tablespace to meteor;
+```
+**Step 4:** Verify that your meteor account has been created:
 ```bash
 $ sqlplus meteor/meteor
 
@@ -181,56 +219,12 @@ Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
 
 SQL> exit
 ```
-**Step 6:** Add meteor-oracle package to your meteor application.
+**Step 4:** Add **meteor-oracle** package to your meteor project
 ```bash
-$ cd ~/workspace/YourMeteorApplication
-$ source ~/workspace/meteor-oracle/source_me.sh
-$ meteor add metstrike:meteor-oracle
-```
-**Step 7:** Run your meteor application.
-```bash
-$ cd ~/workspace/YourMeteorApplication
-$ source ~/workspace/meteor-oracle/source_me.sh
-$ meteor
-```
-- - - 
-### Run TODOS Example Application with Oracle
-It is very easy to convert the TODO Example Application. The modified sample can be found [here](https://github.com/metstrike/todos.git).
-
-**Step 1:** Install TODO Example Application:
-```bash
-$ cd ~/workspace
-$ git clone https://github.com/metstrike/todos.git
-$ cd todos
-```
-**Step 2:** Add meteor-oracle package and run the application
-```bash
-$ cd ~/workspace/todos
-$ source ~/workspace/meteor-oracle/source_me.sh
+$ cd <PATH-TO-YOUR-METEOR-PROJECT>
+$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<PATH-TO-YOUR-ORACLE-INSTANT-CLIENT>/instantclient_11_2/
 $ meteor add metstrike:meteor-oracle
 $ meteor
-```
-**Step 3:** Explore new tables creates in the oracle database by this meteor driver
-```bash
-$ sqlplus meteor/meteor
-
-SQL*Plus: Release 11.2.0.2.0 Production on Mon Dec 14 16:52:07 2015
-
-Copyright (c) 1982, 2011, Oracle.  All rights reserved.
-
-
-Connected to:
-Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
-
-SQL> select * from tab;                           
-
-TNAME			       TABTYPE	CLUSTERID
------------------------------- ------- ----------
-lists			       TABLE
-oplog			       TABLE
-todos			       TABLE
-
-3 rows selected.
 ```
 - - - 
 ### Get the Idea

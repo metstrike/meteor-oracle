@@ -1,7 +1,7 @@
 
 Package.describe({
   name: 'metstrike:meteor-oracle',
-  version: '0.1.0',
+  version: '0.2.0',
   // Brief, one-line summary of the package.
   summary: 'Oracle Database Driver for Meteor',
   // URL to the Git repository containing the source code for this package.
@@ -12,7 +12,7 @@ Package.describe({
 });
 
 Npm.depends({
-	'oracledb': '1.4.0'
+	'oracledb': '1.6.0'
 });
 
 Package.onUse(function(api) {
